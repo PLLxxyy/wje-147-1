@@ -83,6 +83,31 @@ export interface Order {
   image_url?: string;
   user_nickname?: string;
   username?: string;
+  review_id?: number;
+  review_rating?: number;
+  review_content?: string;
+  review_created_at?: string;
+}
+
+export interface Review {
+  id: number;
+  order_id: number;
+  user_id: number;
+  equipment_id: number;
+  rating: number;
+  content: string;
+  created_at: string;
+  user_nickname?: string;
+  username?: string;
+  equipment_name?: string;
+  category?: EquipmentCategory;
+  image_url?: string;
+}
+
+export interface ReviewSummary {
+  review_count: number;
+  avg_rating: number;
+  list: Review[];
 }
 
 export interface StatsOverview {

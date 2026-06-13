@@ -57,9 +57,11 @@ router.get('/my', authMiddleware, (req: Request, res: Response) => {
   const db = getDb();
   try {
     const rows = db.prepare(`
-      SELECT o.*, e.name as equipment_name, e.category, e.brand, e.image_url
+      SELECT o.*, e.name as equipment_name, e.category, e.brand, e.image_url,
+             r.id as review_id, r.rating as review_rating, r.content as review_content, r.created_at as review_created_at
       FROM orders o
       JOIN equipment e ON o.equipment_id = e.id
+      LEFT JOIN reviews r ON o.id = r.order_id
       WHERE o.user_id = ?
       ORDER BY o.created_at DESC
     `).all(req.auth!.id);

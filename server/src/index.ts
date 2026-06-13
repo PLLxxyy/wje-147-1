@@ -5,6 +5,7 @@ import authRouter from './routes/auth';
 import equipmentRouter from './routes/equipment';
 import ordersRouter from './routes/orders';
 import statsRouter from './routes/stats';
+import reviewsRouter from './routes/reviews';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -22,6 +23,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/equipment', equipmentRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/reviews', reviewsRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

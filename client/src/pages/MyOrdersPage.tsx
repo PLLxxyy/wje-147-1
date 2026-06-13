@@ -1,10 +1,24 @@
 import { useState, useEffect } from 'react';
-import { orderApi } from '../api';
+import { orderApi, reviewApi } from '../api';
 import { Order, STATUS_LABELS, STATUS_TAG_CLASS, CATEGORY_LABELS, CATEGORY_ICONS, OrderStatus } from '../types';
+
+const renderStars = (rating: number, size = 14) => {
+  const stars = [];
+  for (let i = 1; i <= 5; i++) {
+    stars.push(
+      <span key={i} style={{ color: i <= rating ? '#faad14' : '#d9d9d9', fontSize: size }}>★</span>
+    );
+  }
+  return <span style={{ display: 'inline-flex', gap: 2 }}>{stars}</span>;
+};
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewModal, setReviewModal] = useState<Order | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewContent, setReviewContent] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -30,6 +44,38 @@ export default function MyOrdersPage() {
     } catch (err: any) {
       alert(err.message);
     }
+  };
+
+  const openReviewModal = (order: Order) => {
+    setReviewModal(order);
+    setReviewRating(5);
+    setReviewContent('');
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!reviewModal) return;
+    if (reviewRating < 1 || reviewRating > 5) {
+      alert('请选择评分');
+      return;
+    }
+    setReviewSubmitting(true);
+    try {
+      await reviewApi.create({
+        order_id: reviewModal.id,
+        rating: reviewRating,
+        content: reviewContent,
+      });
+      setReviewModal(null);
+      load();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const canReview = (order: Order) => {
+    return (order.status === 'completed' || order.status === 'damaged') && !order.review_id;
   };
 
   return (
@@ -83,6 +129,18 @@ export default function MyOrdersPage() {
                   损坏说明：{order.damage_desc}（扣款 ¥{order.damage_deduct}）
                 </div>
               )}
+              {order.review_id && order.review_rating && (
+                <div style={{ background: '#fffbe6', padding: 12, borderRadius: 6, marginBottom: 12, fontSize: 13 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ color: '#666' }}>我的评价：</span>
+                    {renderStars(order.review_rating)}
+                    <span style={{ color: '#faad14', fontWeight: 600 }}>{order.review_rating}分</span>
+                  </div>
+                  {order.review_content && (
+                    <div style={{ color: '#666', marginTop: 4 }}>{order.review_content}</div>
+                  )}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 {order.status === 'pending' && (
                   <button className="btn btn-default btn-sm" onClick={() => handleCancel(order.id)}>取消订单</button>
@@ -90,9 +148,61 @@ export default function MyOrdersPage() {
                 {order.status === 'renting' && (
                   <button className="btn btn-success btn-sm" onClick={() => handleReturn(order.id)}>确认归还</button>
                 )}
+                {canReview(order) && (
+                  <button className="btn btn-warning btn-sm" onClick={() => openReviewModal(order)}>去评价</button>
+                )}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {reviewModal && (
+        <div className="modal-overlay" onClick={() => setReviewModal(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h2>评价装备 - {reviewModal.equipment_name}</h2>
+            <p style={{ color: '#666', marginBottom: 20 }}>
+              订单号: #{reviewModal.id} | 租期: {reviewModal.days}天
+            </p>
+            <div className="form-group">
+              <label>评分 <span className="required">*</span></label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <span
+                    key={n}
+                    onClick={() => setReviewRating(n)}
+                    style={{
+                      fontSize: 32,
+                      cursor: 'pointer',
+                      color: n <= reviewRating ? '#faad14' : '#d9d9d9',
+                      transition: 'color .2s',
+                    }}
+                  >
+                    ★
+                  </span>
+                ))}
+                <span style={{ marginLeft: 12, color: '#faad14', fontWeight: 600, fontSize: 18 }}>
+                  {reviewRating} 分
+                </span>
+              </div>
+            </div>
+            <div className="form-group">
+              <label>评价内容</label>
+              <textarea
+                className="form-input"
+                value={reviewContent}
+                onChange={e => setReviewContent(e.target.value)}
+                placeholder="分享您的使用体验（选填）"
+                rows={4}
+              />
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-default" onClick={() => setReviewModal(null)}>取消</button>
+              <button className="btn btn-primary" onClick={handleReviewSubmit} disabled={reviewSubmitting}>
+                {reviewSubmitting ? '提交中...' : '提交评价'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

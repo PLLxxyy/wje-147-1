@@ -56,6 +56,19 @@ export function initDb(db: Database.Database): void {
       FOREIGN KEY (user_id) REFERENCES users(id),
       FOREIGN KEY (equipment_id) REFERENCES equipment(id)
     );
+
+    CREATE TABLE IF NOT EXISTS reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL UNIQUE,
+      user_id INTEGER NOT NULL,
+      equipment_id INTEGER NOT NULL,
+      rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+      content TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (order_id) REFERENCES orders(id),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (equipment_id) REFERENCES equipment(id)
+    );
   `);
 
   // Seed data

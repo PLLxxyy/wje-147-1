@@ -82,6 +82,21 @@ export const orderApi = {
   cancel: (id: number) => request<any>(`/orders/${id}/cancel`, { method: 'PUT' }),
 };
 
+// Reviews
+export const reviewApi = {
+  create: (data: { order_id: number; rating: number; content?: string }) =>
+    request<any>('/reviews', { method: 'POST', body: JSON.stringify(data) }),
+  getByEquipment: (equipmentId: number) =>
+    request<any>(`/reviews/equipment/${equipmentId}`),
+  allReviews: (params?: { equipment_id?: number; user_id?: number }) => {
+    const search = new URLSearchParams();
+    if (params?.equipment_id) search.set('equipment_id', String(params.equipment_id));
+    if (params?.user_id) search.set('user_id', String(params.user_id));
+    return request<any[]>(`/reviews/all?${search.toString()}`);
+  },
+  myReviews: () => request<any[]>('/reviews/my'),
+};
+
 // Stats
 export const statsApi = {
   overview: () => request<any>('/stats/overview'),

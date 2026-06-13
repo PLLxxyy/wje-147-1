@@ -1,8 +1,18 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { equipApi, orderApi } from '../api';
-import { Equipment, CATEGORY_LABELS, CATEGORY_ICONS } from '../types';
+import { equipApi, orderApi, reviewApi } from '../api';
+import { Equipment, CATEGORY_LABELS, CATEGORY_ICONS, ReviewSummary } from '../types';
 import { useAuth } from '../components/AuthContext';
+
+const renderStars = (rating: number, size = 14) => {
+  const stars = [];
+  for (let i = 1; i <= 5; i++) {
+    stars.push(
+      <span key={i} style={{ color: i <= rating ? '#faad14' : '#d9d9d9', fontSize: size }}>★</span>
+    );
+  }
+  return <span style={{ display: 'inline-flex', gap: 2 }}>{stars}</span>;
+};
 
 export default function GearDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -10,6 +20,8 @@ export default function GearDetailPage() {
   const { user } = useAuth();
   const [item, setItem] = useState<Equipment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reviewData, setReviewData] = useState<ReviewSummary | null>(null);
+  const [reviewLoading, setReviewLoading] = useState(true);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [orderLoading, setOrderLoading] = useState(false);
@@ -19,6 +31,7 @@ export default function GearDetailPage() {
   useEffect(() => {
     if (id) {
       equipApi.get(Number(id)).then(setItem).catch(() => navigate('/')).finally(() => setLoading(false));
+      reviewApi.getByEquipment(Number(id)).then(setReviewData).finally(() => setReviewLoading(false));
     }
   }, [id, navigate]);
 
@@ -160,6 +173,54 @@ export default function GearDetailPage() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 24 }}>
+        <div className="card-header">
+          <h2>用户评价</h2>
+          {!reviewLoading && reviewData && reviewData.review_count > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {renderStars(Math.round(reviewData.avg_rating), 16)}
+              <span style={{ fontWeight: 600, color: '#faad14' }}>{reviewData.avg_rating}</span>
+              <span style={{ color: '#999', fontSize: 13 }}>({reviewData.review_count}条评价)</span>
+            </div>
+          )}
+        </div>
+
+        {reviewLoading ? (
+          <div className="empty-state" style={{ padding: 30 }}><p>加载中...</p></div>
+        ) : !reviewData || reviewData.review_count === 0 ? (
+          <div className="empty-state" style={{ padding: 30 }}>
+            <div className="empty-icon" style={{ fontSize: 40 }}>⭐</div>
+            <p>暂无评价，快来成为第一个评价的人吧！</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {reviewData.list.map(review => (
+              <div key={review.id} style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: 16 }}>
+                <div className="flex-between" style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e6f7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1890ff', fontWeight: 600, fontSize: 14 }}>
+                      {(review.user_nickname || review.username || '用').charAt(0)}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{review.user_nickname || review.username}</div>
+                      <div style={{ fontSize: 12, color: '#999' }}>
+                        {new Date(review.created_at).toLocaleDateString('zh-CN')}
+                      </div>
+                    </div>
+                  </div>
+                  {renderStars(review.rating)}
+                </div>
+                {review.content && (
+                  <p style={{ color: '#666', fontSize: 14, lineHeight: 1.8, paddingLeft: 46 }}>
+                    {review.content}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

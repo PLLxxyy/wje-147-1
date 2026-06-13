@@ -8,6 +8,7 @@ import GearFormPage from './pages/GearFormPage';
 import AdminEquipmentsPage from './pages/AdminEquipmentsPage';
 import AdminOrdersPage from './pages/AdminOrdersPage';
 import AdminStatsPage from './pages/AdminStatsPage';
+import AdminReviewsPage from './pages/AdminReviewsPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import ProfilePage from './pages/ProfilePage';
 import { ReactNode } from 'react';
@@ -35,6 +36,7 @@ function AppLayout() {
         <Route path="/admin/equipments/new" element={<ProtectedRoute role="admin"><GearFormPage /></ProtectedRoute>} />
         <Route path="/admin/equipments/edit/:id" element={<ProtectedRoute role="admin"><GearFormWrapper /></ProtectedRoute>} />
         <Route path="/admin/orders" element={<ProtectedRoute role="admin"><AdminOrdersPage /></ProtectedRoute>} />
+        <Route path="/admin/reviews" element={<ProtectedRoute role="admin"><AdminReviewsPage /></ProtectedRoute>} />
         <Route path="/admin/stats" element={<ProtectedRoute role="admin"><AdminStatsPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

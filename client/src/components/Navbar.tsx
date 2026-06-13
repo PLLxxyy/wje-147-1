@@ -18,6 +18,7 @@ export default function Navbar() {
           <>
             <Link to="/admin/equipments" className={isActive('/admin/equipments')}>装备管理</Link>
             <Link to="/admin/orders" className={isActive('/admin/orders')}>订单管理</Link>
+            <Link to="/admin/reviews" className={isActive('/admin/reviews')}>评价管理</Link>
             <Link to="/admin/stats" className={isActive('/admin/stats')}>数据统计</Link>
           </>
         )}
