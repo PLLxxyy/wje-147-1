@@ -6,18 +6,46 @@ const router = Router();
 
 router.post('/', authMiddleware, (req: Request, res: Response) => {
   const { order_id, rating, content } = req.body;
-  if (!order_id || !rating) {
-    res.status(400).json({ error: '请填写完整评价信息' });
+
+  if (order_id === undefined || order_id === null || order_id === '') {
+    res.status(400).json({ error: '订单ID不能为空' });
+    return;
+  }
+  const orderIdNum = Number(order_id);
+  if (!Number.isInteger(orderIdNum) || orderIdNum <= 0) {
+    res.status(400).json({ error: '订单ID格式无效' });
+    return;
+  }
+
+  if (rating === undefined || rating === null || rating === '') {
+    res.status(400).json({ error: '评分不能为空' });
+    return;
+  }
+  if (typeof rating !== 'number' && typeof rating !== 'string') {
+    res.status(400).json({ error: '评分格式无效' });
     return;
   }
   const ratingNum = Number(rating);
+  if (Number.isNaN(ratingNum)) {
+    res.status(400).json({ error: '评分必须是有效数字' });
+    return;
+  }
+  if (!Number.isInteger(ratingNum)) {
+    res.status(400).json({ error: '评分必须是整数' });
+    return;
+  }
   if (ratingNum < 1 || ratingNum > 5) {
     res.status(400).json({ error: '评分必须在 1-5 之间' });
     return;
   }
+
+  if (content !== undefined && typeof content !== 'string') {
+    res.status(400).json({ error: '评价内容格式无效' });
+    return;
+  }
   const db = getDb();
   try {
-    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(order_id) as any;
+    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderIdNum) as any;
     if (!order) {
       res.status(404).json({ error: '订单不存在' });
       return;
@@ -30,14 +58,14 @@ router.post('/', authMiddleware, (req: Request, res: Response) => {
       res.status(400).json({ error: '只能评价已完成的订单' });
       return;
     }
-    const existing = db.prepare('SELECT id FROM reviews WHERE order_id = ?').get(order_id);
+    const existing = db.prepare('SELECT id FROM reviews WHERE order_id = ?').get(orderIdNum);
     if (existing) {
       res.status(400).json({ error: '此订单已评价过' });
       return;
     }
     const result = db.prepare(
       'INSERT INTO reviews (order_id, user_id, equipment_id, rating, content) VALUES (?, ?, ?, ?, ?)'
-    ).run(order_id, req.auth!.id, order.equipment_id, ratingNum, content || '');
+    ).run(orderIdNum, req.auth!.id, order.equipment_id, ratingNum, content || '');
     const review = db.prepare('SELECT * FROM reviews WHERE id = ?').get(result.lastInsertRowid);
     res.json(review);
   } finally {
